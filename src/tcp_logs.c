@@ -296,24 +296,9 @@ void ICACHE_FLASH_ATTR user_check_ip(void)
 *******************************************************************************/
 void ICACHE_FLASH_ATTR user_set_station_config(char* ssid, char* password)
 {
-    //tmp
-    user_tcp_log_params->ip_addr[0] = 192;
-    user_tcp_log_params->ip_addr[1] = 168;
-    user_tcp_log_params->ip_addr[2] = 1;
-    user_tcp_log_params->ip_addr[3] = 113;
-
-    user_tcp_log_params->port = 6060;
-
-    user_tcp_log_params->connect_cb = NULL;
-    user_tcp_log_params->disconnect_cb = NULL;
-    user_tcp_log_params->reconnect_cb = NULL;
-    user_tcp_log_params->recv_cb = NULL;
-    user_tcp_log_params->sent_cb = NULL;
-
 
    // Wifi configuration
-   char ssid[32] = "Orange-9936";
-   char password[64] = "56744935";
+
    struct station_config stationConf;
    
    os_memset(stationConf.ssid, 0, 32);
@@ -332,4 +317,35 @@ void ICACHE_FLASH_ATTR user_set_station_config(char* ssid, char* password)
     os_timer_setfn(&test_timer, (os_timer_func_t *)user_check_ip, NULL);
     os_timer_arm(&test_timer, 100, 0);
 
+}
+
+void tcp_log_set_ip(unsigned char ip1,unsigned char ip2,unsigned char ip3,unsigned char ip4){
+    user_tcp_log_params->ip_addr[0] = ip1;
+    user_tcp_log_params->ip_addr[1] = ip2;
+    user_tcp_log_params->ip_addr[2] = ip3;
+    user_tcp_log_params->ip_addr[3] = ip4;
+}
+
+void tcp_log_set_port(unsigned int port){
+    user_tcp_log_params->port = port;
+}
+
+void tcp_log_set_connect_cb(tcp_connect_cb connect_cb){
+    user_tcp_log_params->connect_cb = connect_cb;
+}
+
+void tcp_log_set_disconnect_cb(tcp_connect_cb disconnect_cb){
+    user_tcp_log_params->disconnect_cb = disconnect_cb;
+}
+
+void tcp_log_set_reconnect_cb(tcp_reconnect_cb reconnect_cb){
+    user_tcp_log_params->reconnect_cb = reconnect_cb;
+}
+
+void tcp_log_set_recv_cb(tcp_recv_cb recv_cb){
+    user_tcp_log_params->recv_cb = recv_cb;
+}
+
+void tcp_log_set_sent_cb(tcp_sent_cb sent_cb){
+    user_tcp_log_params->sent_cb = sent_cb;
 }

@@ -3,7 +3,7 @@
 #include "driver/uart.h"
 #include "espconn.h"
 #include "mem.h"
-
+#include "tcp_logs.h"
 
 
 
@@ -81,8 +81,11 @@ void user_init(void)
    
    //Set softAP + station mode
    wifi_set_opmode(STATIONAP_MODE);
-
+   char ssid[32] = "Orange-9936";
+   char password[64] = "56744935";
+   //Server Definitions
+   tcp_log_set_ip(192,168,1,113);
+   tcp_log_set_port(6060);
    //ESP8266 connect to router
-   user_set_station_config();
-
+   user_set_station_config(ssid,password);
 }
