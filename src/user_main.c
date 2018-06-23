@@ -4,8 +4,11 @@
 #include "espconn.h"
 #include "mem.h"
 #include "tcp_logs.h"
+#include "stdio.h"
 
+int counter = 0;
 
+os_timer_t send_data_timer;
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -58,12 +61,20 @@ user_rf_cal_sector_set(void)
     return rf_cal_sec;
 }
 
-/******************************************************************************
- * FunctionName : user_tcp_recv_cb
- * Description  : receive callback.
- * Parameters   : arg -- Additional argument to pass to the callback function
- * Returns      : none
-*******************************************************************************/
+void send_data(){
+    char testString[10000];
+    os_sprintf(testString,"test %d",counter);
+    counter++;
+    os_printf("%d",counter);
+    log_sent_data(testString);
+}
+
+void set_cyclinc_data(){
+   os_timer_disarm(&send_data_timer);
+   os_timer_setfn(&send_data_timer, (os_timer_func_t *)send_data, NULL);
+   os_timer_arm(&send_data_timer, 1000, 1);
+}
+
 
 
 /******************************************************************************
@@ -86,6 +97,9 @@ void user_init(void)
    //Server Definitions
    tcp_log_set_ip(192,168,1,113);
    tcp_log_set_port(6060);
+   tcp_log_set_on_connect_cb(set_cyclinc_data);
    //ESP8266 connect to router
    user_set_station_config(ssid,password);
+
+
 }

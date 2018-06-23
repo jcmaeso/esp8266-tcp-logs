@@ -54,7 +54,6 @@ LOCAL void ICACHE_FLASH_ATTR user_tcp_recv_cb(void *arg, char *pusrdata, unsigne
 {
     char data[] = "CONNECTED TO SERVER";
    //received some data from tcp connection
-   os_printf("Fichero diferente\n");
    if(string_compare("CONNECTED TO SERVER",pusrdata)== 0){
         os_printf("Connected \r\n");
         os_printf("%s \r\n", pusrdata);
@@ -96,13 +95,13 @@ LOCAL void ICACHE_FLASH_ATTR user_tcp_discon_cb(void *arg)
  * Parameters   : pespconn -- the espconn used to connetion with the host
  * Returns      : none
 *******************************************************************************/
-LOCAL void ICACHE_FLASH_ATTR user_sent_data(struct espconn *pespconn)
+void ICACHE_FLASH_ATTR log_sent_data(char* data)
 {
-    char *pbuf = (char *)os_zalloc(packet_size);
+    char *pbuf = (char *)os_zalloc(user_tcp_log_params->size_package);
 
-    os_sprintf(pbuf, "Hola soy un ESP");
+    os_memcpy(pbuf, data,user_tcp_log_params->size_package);
 
-   espconn_sent(pespconn, pbuf, os_strlen(pbuf));
+   espconn_sent(user_tcp_log_params->pespconn, pbuf, os_strlen(pbuf));
    
    os_free(pbuf);
 
@@ -116,27 +115,27 @@ LOCAL void ICACHE_FLASH_ATTR user_sent_data(struct espconn *pespconn)
 *******************************************************************************/
 LOCAL void ICACHE_FLASH_ATTR user_tcp_connect_cb(void *arg)
 {
-    struct espconn *pespconn = arg;
-
+    //struct espconn *pespconn = arg;
+    user_tcp_log_params->pespconn = arg;
     os_printf("connect succeed !!! \r\n");
 
     if(user_tcp_log_params->recv_cb)
-        espconn_regist_recvcb(pespconn, user_tcp_log_params->recv_cb);
+        espconn_regist_recvcb(user_tcp_log_params->pespconn, user_tcp_log_params->recv_cb);
     else
-        espconn_regist_recvcb(pespconn, user_tcp_recv_cb);
+        espconn_regist_recvcb(user_tcp_log_params->pespconn, user_tcp_recv_cb);
     
     if(user_tcp_log_params->sent_cb)
-        espconn_regist_sentcb(pespconn, user_tcp_log_params->sent_cb);
+        espconn_regist_sentcb(user_tcp_log_params->pespconn, user_tcp_log_params->sent_cb);
     else
-        espconn_regist_sentcb(pespconn, user_tcp_sent_cb);
+        espconn_regist_sentcb(user_tcp_log_params->pespconn, user_tcp_sent_cb);
     
     if(user_tcp_log_params->disconnect_cb)
-        espconn_regist_disconcb(pespconn, user_tcp_log_params->disconnect_cb);
+        espconn_regist_disconcb(user_tcp_log_params->pespconn, user_tcp_log_params->disconnect_cb);
     else
-        espconn_regist_disconcb(pespconn, user_tcp_discon_cb);
-
-   
-    user_sent_data(pespconn);
+        espconn_regist_disconcb(user_tcp_log_params->pespconn, user_tcp_discon_cb);
+    
+    if(user_tcp_log_params->on_connect_cb)
+        user_tcp_log_params->on_connect_cb();
 }
 
 /******************************************************************************
@@ -297,6 +296,10 @@ void ICACHE_FLASH_ATTR user_check_ip(void)
 void ICACHE_FLASH_ATTR user_set_station_config(char* ssid, char* password)
 {
 
+    //default package size
+    if(!user_tcp_log_params->size_package){
+        user_tcp_log_params->size_package = packet_size;
+    }
    // Wifi configuration
 
    struct station_config stationConf;
@@ -314,8 +317,8 @@ void ICACHE_FLASH_ATTR user_set_station_config(char* ssid, char* password)
 
    //set a timer to check whether got ip from router succeed or not.
    os_timer_disarm(&test_timer);
-    os_timer_setfn(&test_timer, (os_timer_func_t *)user_check_ip, NULL);
-    os_timer_arm(&test_timer, 100, 0);
+   os_timer_setfn(&test_timer, (os_timer_func_t *)user_check_ip, NULL);
+   os_timer_arm(&test_timer, 100, 0);
 
 }
 
@@ -348,4 +351,11 @@ void tcp_log_set_recv_cb(tcp_recv_cb recv_cb){
 
 void tcp_log_set_sent_cb(tcp_sent_cb sent_cb){
     user_tcp_log_params->sent_cb = sent_cb;
+}
+void tcp_log_set_on_connect_cb(tcp_on_connect_cb on_connect_cb){
+    user_tcp_log_params->on_connect_cb = on_connect_cb;
+}
+
+void tcp_log_set_size_package(unsigned int size_package){
+    user_tcp_log_params->size_package = size_package;
 }
